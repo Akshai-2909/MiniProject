@@ -36,8 +36,8 @@ def generate_hash(message: bytearray) -> bytearray:
 
     # Parsing
     blocks = [] # contains 512-bit chunks of message
-    for i in range(0, len(message), 64): # 64 bytes is 512 bits
-        blocks.append(message[i:i+64])
+    for i in range(0, len(message), 32): # 64 bytes is 512 bits
+        blocks.append(message[i:i+32])
 
     # Setting Initial Hash Value
     h0 = 0x6a09e667
@@ -53,7 +53,7 @@ def generate_hash(message: bytearray) -> bytearray:
     for message_block in blocks:
         # Prepare message schedule
         message_schedule = []
-        for t in range(0, 64):
+        for t in range(0, 32):
             if t <= 15:
                 # adds the t'th 32 bit word of the block,
                 # starting from leftmost word
@@ -69,7 +69,7 @@ def generate_hash(message: bytearray) -> bytearray:
                 schedule = ((term1 + term2 + term3 + term4) % 2**32).to_bytes(4, 'big')
                 message_schedule.append(schedule)
 
-        assert len(message_schedule) == 64
+        assert len(message_schedule) == 32
 
         # Initialize working variables
         a = h0
@@ -82,7 +82,7 @@ def generate_hash(message: bytearray) -> bytearray:
         h = h7
 
         # Iterate for t=0 to 63
-        for t in range(64):
+        for t in range(32):
             t1 = ((h + _capsigma1(e) + _ch(e, f, g) + K[t] +
                    int.from_bytes(message_schedule[t], 'big')) % 2**32)
 
@@ -109,8 +109,9 @@ def generate_hash(message: bytearray) -> bytearray:
 
     return ((h0).to_bytes(4, 'big') + (h1).to_bytes(4, 'big') +
             (h2).to_bytes(4, 'big') + (h3).to_bytes(4, 'big') +
-            (h4).to_bytes(4, 'big') + (h5).to_bytes(4, 'big') +
-            (h6).to_bytes(4, 'big') + (h7).to_bytes(4, 'big'))
+            (h4).to_bytes(4, 'big') + (h5).to_bytes(4, 'big')) 
+            # +
+            # (h6).to_bytes(4, 'big') + (h7).to_bytes(4, 'big'))
 
 def _sigma0(num: int):
     """As defined in the specification."""
@@ -153,4 +154,6 @@ def _rotate_right(num: int, shift: int, size: int = 32):
     return (num >> shift) | (num << size - shift)
 
 if __name__ == "__main__":
-    print(generate_hash("Hello").hex())
+    a = generate_hash("Hello").hex()
+    print("The hash for sha-192 is "+a)
+    print("The length of sha-192 hash is "+str(len(a)))
